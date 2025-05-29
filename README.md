@@ -29,7 +29,7 @@ Build an end-to-end data management system for the [IEEE-CIS Fraud Detection Dat
 ## 🏗️ Project Structure
 
 ```
-ik-dataManagement/
+ik/
 ├── bootstrap.sh           # Main automation script
 ├── config.sh              # Central configuration (edit this)
 ├── scripts/
