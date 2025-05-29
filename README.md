@@ -57,8 +57,8 @@ ik-dataManagement/
 Upload or clone this repo onto your EC2 instance:
 
 ```bash
-git clone https://github.com/InfinitelyAsymptotic/ik.git
-cd ik-dataManagement
+git clone -b dataManagement https://github.com/InfinitelyAsymptotic/ik.git
+cd ik
 ```
 
 Ensure your `~/.kaggle/kaggle.json` file exists on the EC2.
