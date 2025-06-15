@@ -335,9 +335,9 @@ By the end of this workshop, you'll understand:
 
 ## 🤝 Workshop Resources
 
-- **GitHub Repo:** [[Link to repo with all code]](https://github.com/InfinitelyAsymptotic/ik/tree/mlDeploymentWorkshop)
+- **GitHub Repo:** [Link to repo with all code](https://github.com/InfinitelyAsymptotic/ik/tree/mlDeploymentWorkshop)
 - **Contact:** pranjaljoshi [at] live [dot] com
-- [[**Documentation**]] (https://github.com/InfinitelyAsymptotic/ik/blob/mlDeploymentWorkshop/ML%20Deployment%20Workshop%20Plan.pdf)
+- **Documentation:** [Link to PDF](https://github.com/InfinitelyAsymptotic/ik/blob/mlDeploymentWorkshop/ML%20Deployment%20Workshop%20Plan.pdf)
 
 ---
 
