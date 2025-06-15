@@ -1,1 +1,12 @@
 .venv
+saved_models/
+data/
+plots/
+# Ignore Python cache files
+__pycache__/
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Ignore virtual environment directories
+.venv/
+# Ignore logs
+logs/     
