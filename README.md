@@ -46,6 +46,8 @@ mkdir ml_deployment_workshop
 cd ml_deployment_workshop
 
 # Clone this git repository
+git clone https://github.com/InfinitelyAsymptotic/ik.git
+git checkout mlDeploymentWorkshop
 
 # Verify Python environment
 python --version  # Should be 3.8+
