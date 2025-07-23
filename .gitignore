@@ -1,4 +1,6 @@
-# Data files and datasets
+# =======================
+# 📁 DATA FILES & ARTIFACTS
+# =======================
 *.csv
 *.tsv
 *.json
@@ -16,20 +18,15 @@
 *.npz
 *.mat
 
-# Large compressed files
-*.zip
-*.tar
-*.tar.gz
-*.tar.bz2
-*.rar
-*.7z
-*.gz
-*.bz2
+# Dataset folders
+data/
+!data/README.md   # (Optional) keep a placeholder/info file
 
-# Model artifacts and weights
+# =======================
+# 📦 MODEL & TRAINING ARTIFACTS
+# =======================
 *.joblib
 *.model
-*.h5
 *.pb
 *.pt
 *.pth
@@ -40,48 +37,49 @@
 *.tflite
 *.mlmodel
 
-# MLflow artifacts
-mlflow_data/
+# Model output folders
+models/
+checkpoints/
+artifacts/
+runs/
+wandb/
+tensorboard_logs/
+
+# =======================
+# 📊 MLFLOW & LOGGING
+# =======================
 mlruns/
+mlflow_data/
 mlflow.db
 *.db
-
-# Ray results and logs
-ray_results/
 logs/
 *.log
 
-# Training artifacts
-artifacts/
-checkpoints/
-wandb/
-tensorboard_logs/
-runs/
-
-# Cache directories
+# =======================
+# ⚙️ PYTHON CACHE & TOOLING
+# =======================
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
 .mypy_cache/
+.cache/
 .coverage
 htmlcov/
 
-# Environment files
-.env
-.env.local
-.env.*.local
-
-
-# Virtual environments
+# =======================
+# 🧪 VIRTUAL ENVIRONMENTS
+# =======================
+.venv/
 venv/
 env/
 ENV/
 env.bak/
 venv.bak/
-.venv/
 
-# IDE files
+# =======================
+# 🛠 IDE & EDITOR FILES
+# =======================
 .vscode/
 .idea/
 *.swp
@@ -90,32 +88,32 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# Jupyter notebook checkpoints
-.ipynb_checkpoints/
-
-# Docker volumes and data
-docker-compose.override.yml
+# =======================
+# 🔁 DOCKER & CONTAINERS
+# =======================
 .docker/
+docker-compose.override.yml
 
-# Temporary files
+# =======================
+# 📒 JUPYTER & TEMP FILES
+# =======================
+.ipynb_checkpoints/
+*.ipynb
 *.tmp
 *.temp
 tmp/
 temp/
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# =======================
+# 🚫 KAGGLE CREDENTIALS
+# =======================
+~/.kaggle/
+kaggle.json
 
-# Exception: Keep sample/demo data files
-
-
-# Exception: Keep small config data files under 1MB
+# =======================
+# ✅ EXCEPTIONS (OPTIONAL)
+# =======================
+# Keep small config/data examples
 # !config/**/*.json
 # !config/**/*.yaml
 # !config/**/*.yml

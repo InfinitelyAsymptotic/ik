@@ -45,8 +45,8 @@ ml_deployment_/
 ### Step 1.1: Clone and Setup
 ```bash
 # Create project directory
-mkdir ml_deployment_workshop
-cd ml_deployment_workshop
+mkdir ml_deployment
+cd ml_deployment
 
 # Clone this git repository
 git clone https://github.com/InfinitelyAsymptotic/ik.git

@@ -1,0 +1,26 @@
+name: Fraud ML CI/CD
+
+on: [push, pull_request]
+
+jobs:
+  build-and-train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install kaggle
+      - name: Setup kaggle.json
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          mkdir -p ~/.kaggle
+          echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+      - name: Download and preprocess data
+        run: bash download_data.sh
+      - name: Train and log model
+        run: bash run_training.sh
+      # Optionally add test steps below
