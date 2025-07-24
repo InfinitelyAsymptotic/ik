@@ -1,4 +1,4 @@
-# 🧪 Open-Source ML Training & Experimentation Pipeline
+# 🧪 M3 Open-Source ML Training & Experimentation Pipeline
 
 A minimal, production-ready machine learning training pipeline for fraud detection using open-source tools. This project demonstrates scalable model training, hyperparameter optimization, and experiment tracking without cloud vendor lock-in.
 
