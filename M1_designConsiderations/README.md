@@ -1,4 +1,4 @@
-# **AWS-Based Fraud Detection Demo**
+# ** M1 Design Considerations AWS-Based Fraud Detection Demo**
 
 ## **🎯 Objective**
 
