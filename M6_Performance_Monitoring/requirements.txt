@@ -1,0 +1,9 @@
+pandas
+scikit-learn
+mlflow
+joblib
+fastapi
+uvicorn
+#evidently>=0.4.7
+evidently
+kaggle

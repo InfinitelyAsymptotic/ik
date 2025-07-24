@@ -117,3 +117,19 @@ kaggle.json
 # !config/**/*.json
 # !config/**/*.yaml
 # !config/**/*.yml
+
+
+data/
+models/
+mlruns/
+monitoring/
+label_inbox/
+*.joblib
+*.csv
+*.json
+*.h5
+*.db
+__pycache__/
+.venv/
+venv/
+.env

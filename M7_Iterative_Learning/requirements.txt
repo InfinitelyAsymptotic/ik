@@ -1,0 +1,8 @@
+apache-airflow
+mlflow
+pandas
+joblib
+fastapi
+uvicorn
+evidently
+scikit-learn

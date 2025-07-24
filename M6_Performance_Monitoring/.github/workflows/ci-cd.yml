@@ -1,0 +1,26 @@
+name: Fraud Drift CI/CD
+
+on: [push, pull_request]
+
+jobs:
+  build-and-train:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Setup Kaggle credentials
+      env:
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      run: |
+        mkdir -p ~/.kaggle
+        echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+        chmod 600 ~/.kaggle/kaggle.json
+    - name: Download Data
+      run: bash download_data.sh
+    - name: Train model
+      run: bash run_training.sh
+    - name: Run drift check
+      run: python monitor.py
