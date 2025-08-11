@@ -1,4 +1,4 @@
-# 🧠 AWS-Based ML Data Management Demo
+# 🧠 M2 AWS-Based ML Data Management Demo
 
 This project demonstrates a modular, automated pipeline for managing ML datasets using AWS services like EC2, S3, DVC, and Feast. It handles ingestion, preprocessing, versioning, and feature storage using best practices.
 
