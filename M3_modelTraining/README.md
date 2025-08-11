@@ -4,12 +4,14 @@ A minimal, production-ready machine learning training pipeline for fraud detecti
 
 ## 🎯 Features
 
-- **🐳 Containerized Training**: docker based reproducible environments
+- **🐳 Containerized Training**: Docker based reproducible environments
 - **📊 Experiment Tracking**: MLflow for metrics, parameters, and model versioning  
 - **🔍 Hyperparameter Tuning**: Ray Tune for efficient parameter optimization
 - **📈 Monitoring**: Ray Dashboard for distributed training monitoring
 - **🚀 Easy Deployment**: Single command setup with Docker Compose
 - **💰 Cost Effective**: No cloud service dependencies
+- **🎮 GPU Support**: NVIDIA GPU acceleration for faster training
+- **📦 Multiple Data Sources**: Support for sample data and Kaggle datasets
 
 ## 🏗️ Architecture
 
@@ -34,83 +36,165 @@ A minimal, production-ready machine learning training pipeline for fraud detecti
 
 ### Prerequisites
 
-- Docker & Docker Compose installed
+- Docker Desktop 4.x+ (with Docker Compose v2)
+- Python 3.8+
 - 4GB+ RAM available
 - 2GB+ disk space
+- NVIDIA GPU (optional, for accelerated training)
+- Kaggle account & API credentials (for downloading dataset)
 
 ### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url>
-cd fraud-detection-ml
+# Clone repository
+git clone https://github.com/InfinitelyAsymptotic/ik.git
+cd ik/M3_modelTraining
+
+# Initialize setup
 chmod +x setup.sh
 ./setup.sh
 ```
 
-### 2. Train Your First Model
+### 2. Environment Configuration
+
+The project uses environment variables for configuration. Create a `.env` file based on your needs:
 
 ```bash
-# Basic training
-docker compose exec trainer python src/train.py --data /app/data/sample_data.csv
+# Create environment file
+touch .env
 
+# Add your configurations
+echo "MLFLOW_TRACKING_URI=http://mlflow:5000" >> .env
+echo "MLFLOW_EXPERIMENT_NAME=fraud_detection" >> .env
+echo "RAY_DASHBOARD_HOST=0.0.0.0" >> .env
+echo "RAY_DASHBOARD_PORT=8265" >> .env
+echo "TRAIN_DATA_PATH=/app/data/sample_data.csv" >> .env
+echo "MODEL_OUTPUT_PATH=/app/models" >> .env
+```
+
+Optional GPU configuration:
+```bash
+echo "CUDA_VISIBLE_DEVICES=0" >> .env
+```
+
+### 3. Data Setup
+
+#### Option 1: Use Existing Sample Data
+```bash
+# Verify sample data exists
+ls data/sample_data.csv
+```
+
+#### Option 2: Kaggle Dataset
+
+1. Get Kaggle API credentials:
+```bash
+# Visit https://www.kaggle.com/settings/account
+# Click "Create New API Token"
+# Downloads kaggle.json
+```
+
+2. Setup credentials:
+```bash
+mkdir -p ~/.kaggle
+mv ~/Downloads/kaggle.json ~/.kaggle/
+chmod 600 ~/.kaggle/kaggle.json
+```
+
+3. Download dataset:
+```bash
+# Using provided script
+chmod +x scripts/download_data.sh
+./scripts/download_data.sh
+```
+
+The dataset structure after download:
+```
+data/
+├── sample_data.csv
+├── kaggle_fraud.csv
+└── raw/
+    ├── ieee-fraud-detection.zip
+    ├── sample_submission.csv
+    ├── test_identity.csv
+    ├── test_transaction.csv
+    ├── train_identity.csv
+    └── train_transaction.csv
+```
+
+### 4. Training Models
+
+#### Basic Training
+```bash
+# Using script
+./scripts/run_training.sh
+
+# Direct command
+docker compose exec trainer python train.py --data /app/data/sample_data.csv
+```
+
+#### Advanced Training
+```bash
 # Training with custom parameters
-docker compose exec trainer python src/train.py \
-    --data /app/data/sample_data.csv \
+docker compose exec trainer python train.py \
+    --data /app/data/kaggle_fraud.csv \
     --n_estimators 200 \
     --max_depth 15 \
-    --experiment_name "my_experiment"
+    --experiment_name "custom_experiment"
 ```
 
-### 3. Run Hyperparameter Tuning
+Available parameters:
+- `--data`: Path to training data CSV
+- `--n_estimators`: Number of trees (default: 100)
+- `--max_depth`: Maximum tree depth (default: 10)
+- `--min_samples_split`: Minimum samples for split (default: 2)
+- `--min_samples_leaf`: Minimum samples in leaf (default: 1)
+- `--experiment_name`: MLflow experiment name
 
+### 5. Hyperparameter Tuning
+
+#### Quick Tuning
 ```bash
-# Quick tuning (10 trials)
-docker compose exec trainer python src/tuner.py \
+# Using script
+./scripts/run_tuning.sh
+
+# Direct command (10 trials)
+docker compose exec trainer python tune_ray.py \
     --data /app/data/sample_data.csv \
     --num_samples 10
-
-# Extensive tuning (50 trials)
-docker compose exec trainer python src/tuner.py \
-    --data /app/data/sample_data.csv \
-    --num_samples 50 \
-    --max_epochs 20
 ```
 
-### 4. Monitor and Analyze
+#### Advanced Tuning
+```bash
+# Extensive tuning (50 trials)
+docker compose exec trainer python tune_ray.py \
+    --data /app/data/kaggle_fraud.csv \
+    --num_samples 50 \
+    --max_epochs 20 \
+    --cpus_per_trial 2
+```
 
+Tuning parameters:
+- `--num_samples`: Number of trials (default: 10)
+- `--max_epochs`: Maximum epochs per trial (default: 10)
+- `--cpus_per_trial`: CPUs per trial (default: 1)
+- `--gpus_per_trial`: GPUs per trial (default: 0)
+
+### 6. Monitoring and Analysis
+
+Access web interfaces:
 - **MLflow UI**: http://localhost:5050
   - View experiment runs
   - Compare model metrics
   - Download model artifacts
-
+  - Model versioning
 - **Ray Dashboard**: http://localhost:8265
   - Monitor distributed training
   - View resource utilization
   - Track tuning progress
+  - Debug execution
 
-## 📊 Using Your Own Data
-
-### Option 1: Replace Sample Data
-
-```bash
-# Copy your CSV to the data directory
-cp /path/to/your/fraud_data.csv data/
-
-# Train with your data
-docker compose exec trainer python src/train.py --data /app/data/fraud_data.csv
-```
-
-### Option 2: Use Kaggle Dataset
-
-```bash
-# Download IEEE-CIS Fraud Detection dataset
-./scripts/download_data.sh
-
-# Train with Kaggle data
-docker compose exec trainer python src/train.py --data /app/data/kaggle_fraud.csv
-```
-
-## 🔧 Configuration
+## 📊 Configuration
 
 ### Model Configuration
 
@@ -136,23 +220,39 @@ tuning:
   timeout: 3600  # 1 hour
 ```
 
-### Environment Variables
+### Logging Configuration
 
-Copy `.env.example` to `.env` and modify:
+Edit `config/logging_config.yaml`:
 
-```bash
-# MLflow Configuration
-MLFLOW_TRACKING_URI=http://mlflow:5000
-MLFLOW_EXPERIMENT_NAME=fraud_detection
-
-# Ray Configuration  
-RAY_DASHBOARD_HOST=0.0.0.0
-RAY_DASHBOARD_PORT=8265
-
-# Training Configuration
-TRAIN_DATA_PATH=/app/data/sample_data.csv
-MODEL_OUTPUT_PATH=/app/models
+```yaml
+version: 1
+formatters:
+  standard:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+  file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: standard
+    filename: logs/training.log
+root:
+  level: INFO
+  handlers: [console, file]
 ```
+
+## 🐳 Docker Configuration
+
+### Main Compose File
+- `docker-compose.yml`: Primary development environment setup
+- `docker.compose`: Production overrides and additional configurations
+
+### Dockerfiles
+- `Dockerfile`: Main training environment with Python, ML libraries
+- `Dockerfile.mlflow`: MLflow tracking server configuration
 
 ## 🧪 Advanced Usage
 
@@ -166,39 +266,23 @@ docker compose up --scale ray-worker=3
 
 # Or use external Ray cluster
 export RAY_ADDRESS="ray://your-cluster:10001"
-python src/train.py --data data/large_dataset.csv
+python train.py --data data/large_dataset.csv
 ```
 
-### Custom Models
+### Model Management
 
-Add new models in `src/models/`:
-
-```python
-# src/models/xgboost_model.py
-from xgboost import XGBClassifier
-from .base_model import BaseModel
-
-class XGBoostModel(BaseModel):
-    def __init__(self, **kwargs):
-        self.model = XGBClassifier(**kwargs)
-    
-    def fit(self, X, y):
-        self.model.fit(X, y)
-        return self
-```
-
-### API Endpoint
-
-Deploy trained models as REST API:
+The trained models are saved with unique identifiers in the `models/` directory:
 
 ```bash
-# Start model serving
-docker compose exec trainer python src/serve.py --model-path /app/models/best_model.pkl
+# List saved models
+ls models/
+# fraud_model_1b358a55d3574046a675a55da6c69f54.joblib
+# fraud_model_8fd22a7fa1fc4525a33f2090d5a14e34.joblib
+# fraud_model_b5fe8ce321b143f5a55b85f0b960a221.joblib
 
-# Test prediction
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{"features": [100, 30, 5, 0, 0.3, 0.2]}'
+# Load a specific model in Python
+import joblib
+model = joblib.load('models/fraud_model_1b358a55d3574046a675a55da6c69f54.joblib')
 ```
 
 ## 📈 Monitoring & Logging
@@ -241,21 +325,6 @@ tuner = tune.Tuner(
 )
 ```
 
-## 🧪 Testing
-
-Run the test suite:
-
-```bash
-# Unit tests
-docker compose exec trainer python -m pytest tests/
-
-# Integration tests
-docker compose exec trainer python -m pytest tests/integration/
-
-# Coverage report
-docker compose exec trainer python -m pytest --cov=src tests/
-```
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -267,6 +336,10 @@ docker compose ps
 
 # Check logs
 docker compose logs mlflow
+
+# Reset MLflow database
+rm -rf mlflow_data/mlflow.db
+docker compose restart mlflow
 ```
 
 **Ray cluster connection failed**:
@@ -280,9 +353,9 @@ docker compose exec ray-head ray status
 
 **Out of memory during training**:
 ```bash
-# Reduce dataset size
-export SAMPLE_SIZE=10000
-python src/train.py --data data/sample_data.csv --sample-size $SAMPLE_SIZE
+# Reduce dataset size by sampling
+head -10000 data/kaggle_fraud.csv > data/small_sample.csv
+python train.py --data data/small_sample.csv
 
 # Or increase Docker memory limit
 # Docker Desktop → Settings → Resources → Advanced → Memory
@@ -295,6 +368,35 @@ docker stats
 
 # Check training logs
 docker compose logs -f trainer
+tail -f logs/training.log
+
+# Check GPU availability (if using GPU)
+docker compose exec trainer nvidia-smi
+```
+
+**Kaggle dataset download fails**:
+```bash
+# Verify API credentials
+ls ~/.kaggle/kaggle.json
+cat ~/.kaggle/kaggle.json
+
+# Test API connection
+kaggle competitions list
+
+# Manual download
+kaggle competitions download -c ieee-fraud-detection
+```
+
+### GPU Issues
+```bash
+# Check NVIDIA driver
+nvidia-smi
+
+# Verify Docker GPU support
+docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
+
+# Check container GPU access
+docker compose exec trainer nvidia-smi
 ```
 
 ## 🔄 CI/CD Integration
@@ -308,25 +410,22 @@ name: ML Pipeline
 on: [push, pull_request]
 
 jobs:
-  test:
+  train:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run tests
+    - name: Setup Docker
       run: |
         docker compose up -d
-        docker compose exec -T trainer python -m pytest tests/
-        
-  train:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v3
+        sleep 30
     - name: Train model
       run: |
-        docker compose up -d
-        docker compose exec -T trainer python src/train.py --data data/sample_data.csv
+        docker compose exec -T trainer python train.py --data /app/data/sample_data.csv
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-models
+        path: models/
 ```
 
 ## 🚀 Production Deployment
@@ -338,36 +437,78 @@ jobs:
 docker swarm init
 
 # Deploy stack
-docker stack deploy -c docker compose.prod.yml fraud-detection
+docker stack deploy -c docker-compose.yml fraud-detection
 
 # Scale services
 docker service scale fraud-detection_trainer=3
 ```
 
-### Kubernetes
+### Using Production Override
 
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: fraud-detector
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: fraud-detector
-  template:
-    metadata:
-      labels:
-        app: fraud-detector
-    spec:
-      containers:
-      - name: trainer
-        image: fraud-detector:latest
-        ports:
-        - containerPort: 8000
+```bash
+# Use production configuration
+docker compose -f docker-compose.yml -f docker.compose up -d
 ```
+
+## 📁 Project Structure
+
+```
+M3_modelTraining/
+├── README.md
+├── setup.sh
+├── docker-compose.yml
+├── docker.compose            # Production overrides
+├── Dockerfile               # Training environment
+├── Dockerfile.mlflow        # MLflow server setup
+├── requirements.txt
+├── train.py                 # Main training script
+├── tune_ray.py              # Hyperparameter tuning
+│
+├── config/
+│   ├── model_config.yaml    # Model parameters
+│   └── logging_config.yaml  # Logging setup
+│
+├── data/
+│   ├── sample_data.csv      # Generated sample dataset
+│   ├── kaggle_fraud.csv     # Processed Kaggle data
+│   └── raw/                 # Original Kaggle files
+│       ├── ieee-fraud-detection.zip
+│       ├── sample_submission.csv
+│       ├── test_identity.csv
+│       ├── test_transaction.csv
+│       ├── train_identity.csv
+│       └── train_transaction.csv
+│
+├── models/                  # Saved model artifacts
+│   ├── fraud_model_1b358a55d3574046a675a55da6c69f54.joblib
+│   ├── fraud_model_8fd22a7fa1fc4525a33f2090d5a14e34.joblib
+│   └── fraud_model_b5fe8ce321b143f5a55b85f0b960a221.joblib
+│
+├── logs/                    # Training and application logs
+├── artifacts/               # MLflow artifacts storage
+├── mlflow_data/             # MLflow tracking database
+│   └── mlflow.db
+├── ray_results/             # Ray Tune experiment results
+│
+└── scripts/                 # Utility scripts
+    ├── download_data.sh     # Kaggle data download
+    ├── run_training.sh      # Training automation
+    └── run_tuning.sh        # Tuning automation
+```
+
+## Directory Descriptions
+
+- **config/**: Configuration files for models, logging, and system settings
+- **data/**: Raw and processed datasets including Kaggle and sample data
+  - **raw/**: Original IEEE fraud detection dataset files and zip archive
+- **models/**: Saved model artifacts with unique identifiers (.joblib format)
+- **logs/**: Training and application logs
+- **artifacts/**: MLflow artifacts storage for experiments
+- **mlflow_data/**: MLflow tracking database (mlflow.db)
+- **ray_results/**: Ray Tune experiment results and hyperparameter logs
+- **scripts/**: Utility scripts for data download, training, and tuning automation
+- **docker.compose**: Production environment overrides for Docker Compose
+- **Dockerfile.mlflow**: Specialized MLflow server container configuration
 
 ## 📚 Resources
 
@@ -375,92 +516,20 @@ spec:
 - **Ray Tune Guide**: https://docs.ray.io/en/latest/tune/
 - **Docker Best Practices**: https://docs.docker.com/develop/best-practices/
 - **Fraud Detection Papers**: https://paperswithcode.com/task/fraud-detection
-
-# Project Structure
-
-```
-fraud-detection-ml/
-├── README.md
-├── setup.sh
-├── docker compose.yml
-├── Dockerfile
-├── requirements.txt
-├── .env.example
-├── .gitignore
-│
-├── src/
-│   ├── train.py
-│   ├── tuner.py
-│   ├── data_generator.py
-│   └── utils.py
-│
-├── config/
-│   ├── model_config.yaml
-│   └── logging_config.yaml
-│
-├── data/
-│   ├── .gitkeep
-│   └── sample_data.csv (generated)
-│
-├── models/
-│   ├── .gitkeep
-│   └── (saved models will go here)
-│
-├── logs/
-│   ├── .gitkeep
-│   └── (training logs will go here)
-│
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   └── 02_model_analysis.ipynb
-│
-├── tests/
-│   ├── __init__.py
-│   ├── test_train.py
-│   └── test_data_generator.py
-│
-├── artifacts/
-│   ├── .gitkeep
-│   └── (MLflow artifacts will go here)
-│
-├── mlflow_data/
-│   ├── .gitkeep
-│   └── (MLflow database will go here)
-│
-├── ray_results/
-│   ├── .gitkeep
-│   └── (Ray Tune results will go here)
-│
-└── scripts/
-    ├── download_data.sh
-    ├── run_training.sh
-    └── run_tuning.sh
-```
-
-## Directory Descriptions
-
-- **src/**: Core application code
-- **config/**: Configuration files for models and logging
-- **data/**: Raw and processed datasets
-- **models/**: Saved model artifacts
-- **logs/**: Training and application logs
-- **notebooks/**: Jupyter notebooks for analysis
-- **tests/**: Unit and integration tests
-- **artifacts/**: MLflow artifacts storage
-- **mlflow_data/**: MLflow tracking database
-- **ray_results/**: Ray Tune experiment results
-- **scripts/**: Utility scripts for common tasks
+- **Kaggle IEEE-CIS Competition**: https://www.kaggle.com/c/ieee-fraud-detection
+- **Docker Compose Reference**: https://docs.docker.com/compose/
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - IEEE-CIS Fraud Detection Competition for the dataset inspiration
 - MLflow team for excellent experiment tracking tools
 - Ray team for distributed computing framework
 - Docker community for containerization best practices
+- Kaggle community for providing high-quality datasets
 
 ---
 
