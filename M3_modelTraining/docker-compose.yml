@@ -50,10 +50,15 @@ services:
       - ./tune_ray.py:/app/tune_ray.py
       - ./requirements.txt:/app/requirements.txt
     working_dir: /app
+    # command: >
+    #   bash -c "pip install -r requirements.txt &&
+    #            ray start --head --dashboard-host=0.0.0.0 --dashboard-port=8265 &&
+    #            sleep infinity"
     command: >
       bash -c "pip install -r requirements.txt &&
-               ray start --head --dashboard-host=0.0.0.0 --dashboard-port=8265 &&
-               sleep infinity"
+           ray start --head --dashboard-host=0.0.0.0 --dashboard-port=8265 --include-job-server true &&
+           sleep infinity"
+
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
@@ -63,6 +68,25 @@ services:
       - PATH=/home/ray/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - CONDA_DEFAULT_ENV=base
       - RAY_PYTHON_EXECUTABLE=/home/ray/anaconda3/bin/python
+
+    
+
+  ray-worker:
+    image: rayproject/ray:latest
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app
+    command: >
+      bash -c "pip install -r requirements.txt &&
+           until ray start --address=ray-head:6379 --num-cpus=2 --block; do
+             echo 'Retrying connection to ray-head...';
+             sleep 5;
+           done"
+    depends_on:
+      - ray-head
 
 volumes:
   mlflow_data:

@@ -129,7 +129,7 @@ data/
 # Using script
 ./scripts/run_training.sh
 
-# Direct command
+# (Optional) Direct command
 docker compose exec trainer python train.py --data /app/data/sample_data.csv
 ```
 
