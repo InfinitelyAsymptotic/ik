@@ -1,7 +1,10 @@
 # =======================
 # 📁 DATA FILES & ARTIFACTS
 # =======================
-*.csv
+# Ignore the contents of the data directory, allowing for exceptions.
+data/*
+
+# Ignore common data file types by extension
 *.tsv
 *.json
 *.jsonl
@@ -18,9 +21,15 @@
 *.npz
 *.mat
 
-# Dataset folders
-data/
-!data/README.md   # (Optional) keep a placeholder/info file
+# Ignore all .csv files...
+*.csv
+
+# ...BUT, make an exception for the specific sample data file.
+# This exception must come AFTER the general *.csv rule to take precedence.
+!data/sample_data.csv
+
+# Keep a placeholder/info file in the data directory if needed.
+!data/README.md
 
 # =======================
 # 📦 MODEL & TRAINING ARTIFACTS
@@ -44,6 +53,8 @@ artifacts/
 runs/
 wandb/
 tensorboard_logs/
+monitoring/
+label_inbox/
 
 # =======================
 # 📊 MLFLOW & LOGGING
@@ -70,6 +81,7 @@ htmlcov/
 # =======================
 # 🧪 VIRTUAL ENVIRONMENTS
 # =======================
+.env
 .venv/
 venv/
 env/
@@ -110,26 +122,13 @@ temp/
 ~/.kaggle/
 kaggle.json
 
-# =======================
-# ✅ EXCEPTIONS (OPTIONAL)
-# =======================
-# Keep small config/data examples
-# !config/**/*.json
-# !config/**/*.yaml
-# !config/**/*.yml
-
-
-data/
-models/
-mlruns/
-monitoring/
-label_inbox/
-*.joblib
-*.csv
-*.json
-*.h5
-*.db
-__pycache__/
-.venv/
-venv/
+# Ignore sensitive environment files
 .env
+
+# Ignore large datasets
+data/raw/
+
+# Ignore the raw data directory inside the M3_modelTraining project
+# NEW WILDCARD RULES
+**/data/raw/
+**/.env
