@@ -1,0 +1,17 @@
+# Python virtual environment
+.venv/
+
+# Kaggle credentials
+kaggle.json
+
+# Large data and results folders
+data/
+mlruns/
+ray_results/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# OS-specific files
+.DS_Store
