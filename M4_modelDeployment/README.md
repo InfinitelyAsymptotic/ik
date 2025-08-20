@@ -1,346 +1,213 @@
-# 🧠 M4 Model Deployment, Inference and Simulating Drift
-
-
-
+# 🧠 M4: Fraud Detection Model - Deployment with Docker
 
 ## 🚀 Overview
 
-- This module takes you through the complete ML deployment lifecycle, from training a simple CNN to detecting model drift in production. You'll get hands-on experience with real deployment challenges.
+This module provides an end-to-end workflow for training a fraud detection model and deploying it as a REST API using FastAPI and Docker. You will learn how to set up your environment, train a model, and containerize the application for a consistent and scalable deployment.
 
-- To understand and be able to visualize real word data drift better, an image classification problem is chosen.
-
-## 📋 Prerequisites & Setup
-
-### Local Environment (Colab/Jupyter)
-```bash
-# Install required packages
-pip install torch torchvision scikit-learn numpy matplotlib seaborn
-pip install fastapi uvicorn python-multipart pillow requests joblib
-```
-
-### EC2 Setup (Instructor Pre-setup)
-- **Instance Type:** t2.medium or t3.medium
-- **AMI:** Ubuntu 20.04 LTS
-- **Security Group:** Allow SSH (22) and Custom TCP (8000)
-- **Storage:** 20GB minimum
+-----
 
 ## 📂 Project Structure
+
 ```
-ml_deployment_/
-├── train_model.py          # Part 2: Training script
-├── app.py                  # Part 3: FastAPI server
-├── requirements.txt        # Dependencies
-├── test_client.py         # Testing script
-├── simulate_drift.py      # Part 5: Drift simulation
-├── deploy_to_ec2.sh       # Deployment commands
-├── saved_models/          # Model artifacts
-├── data/                  # Dataset cache
-└── plots/                 # Generated plots
+.
+├── api.py                   # FastAPI application for inference
+├── download_data.py         # Script to download and preprocess data
+├── train_model.py           # Model training script
+├── requirements.txt         # Project dependencies
+├── Dockerfile               # Docker configuration for the API
+├── docker-compose.yml       # Docker Compose for local development
+├── .gitignore               # Specifies files for Git to ignore
+├── models/                  # Directory for trained model artifacts
+└── data/                    # Directory for raw and processed data
 ```
 
----
+-----
 
-## 📌 Part 1: Setup & Verification (15 min)
+## 📌 Part 1: Initial Setup & Training
 
-### Step 1.1: Clone and Setup
+### Step 1.1: Clone Repository & Setup Environment
+
+If you do not have the project repository already, clone it from the git repo. Then navigate to the correct directory and install the required Python packages.
+
 ```bash
-# Create project directory
-mkdir ml_deployment
-cd ml_deployment
-
-# Clone this git repository
+# Clone the repository
 git clone https://github.com/InfinitelyAsymptotic/ik.git
-git checkout mlDeploymentWorkshop
 
-# Verify Python environment
-python --version  # Should be 3.8+
+# Navigate into the project directory
+cd ik/M4_modelDeployment
+
+# Install all required packages
 pip install -r requirements.txt
 ```
 
-### Step 1.2: Test EC2 Connection
+### Step 1.2: Kaggle API Setup
+
+This project requires data from a Kaggle competition. You must set up Kaggle API credentials to download it.
+
+1.  **Create Account & Join Competition:**
+
+      * Go to the [Kaggle website](https://www.kaggle.com) and create a free account.
+      * Navigate to the [IEEE-CIS Fraud Detection competition page](https://www.kaggle.com/c/ieee-fraud-detection) and accept the competition rules. The API will fail if you skip this.
+
+2.  **Generate and Place API Token:**
+
+      * On the Kaggle site, go to your **Account** page, scroll to the **API** section, and click **"Create New API Token"**. This will download a `kaggle.json` file.
+      * Move this file to the correct location and set its permissions using the following commands:
+        ```bash
+        # Create the .kaggle directory if it doesn't exist
+        mkdir -p ~/.kaggle
+
+        # Move the token to that directory (assuming it's in your Downloads folder)
+        mv ~/Downloads/kaggle.json ~/.kaggle/
+
+        # Set secure permissions so only you can read it
+        chmod 600 ~/.kaggle/kaggle.json
+        ```
+
+### Step 1.3: Download Data & Train Model
+
+Now you can run the scripts to prepare the data and train the model.
+
 ```bash
-# Test SSH connection (replace with your details)
-ssh -i your-key.pem ubuntu@your-ec2-ip
+# This script downloads, extracts, and preprocesses the dataset.
+python download_data.py
 
-# On EC2, verify Python
-python3 --version
-sudo apt update
-sudo apt install -y python3-pip python3-venv
-```
-
----
-
-## 📌 Part 2: Train a Simple CNN (30 min)
-
-### Learning Objectives
-- Understand basic ML training pipeline
-- Learn model serialization best practices
-- Create reproducible training workflows
-
-### Step 2.1: Run Training Script
-```bash
+# This script trains a RandomForest model and saves it to the models/ directory.
 python train_model.py
 ```
 
-**What happens:**
-1. Downloads CIFAR-10 dataset (~170MB)
-2. Trains a simple CNN (5 epochs, ~5 minutes)
-3. Evaluates on test set
-4. Saves model + metadata to `saved_models/`
-5. Generates training plots
+The key output of this stage is the `models/fraud_model.joblib` file, which is the artifact you will deploy.
 
-### Step 2.2: Inspect Results
+-----
+
+## 📌 Part 2: Run and Test the API Locally with Docker
+
+### Step 2.1: Build and Run the Container
+
+Using Docker Compose, you can build the image and start the container with a single command.
+
 ```bash
-ls saved_models/
-# Should contain:
-# - model.pth (PyTorch state dict)
-# - model_metadata.joblib (model info)
-
-ls plots/
-# Should contain:
-# - training_progress.png
+# Build the image and start the container.
+docker-compose up --build
 ```
 
-### 🎯 Key Takeaways
-- **Model Versioning:** Always save metadata with models
-- **Reproducibility:** Fixed random seeds, documented preprocessing
-- **Monitoring:** Track training metrics from day one
+The API will now be running and accessible at `http://localhost:8000`.
 
----
+### Step 2.2: Test the API Endpoints
 
-## 📌 Part 3: Build FastAPI Inference Server (30 min)
+Open a **new terminal** to test the running API endpoints using `curl`.
 
-### Learning Objectives
-- Create production-ready ML APIs
-- Handle image preprocessing pipelines
-- Implement proper error handling
+**Prediction (`/predict`):**
+This command sends a `POST` request with sample transaction data to get a fraud prediction.
 
-### Step 3.1: Start the API Server
 ```bash
-# Start locally first
-python app.py
-
-# Or with uvicorn directly
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+curl -X POST "http://localhost:8000/predict" \
+-H "Content-Type: application/json" \
+-d '{
+    "TransactionAmt": 150.0,
+    "dist1": 10.0,
+    "card1": 12345.0,
+    "card2": 543.0
+}'
 ```
 
-### Step 3.2: Test the API
+**Expected Response:** `{"isFraud":0}` or `{"isFraud":1}`
+
+-----
+
+## 📌 Part 3: Deploy to EC2 with Docker
+
+### Step 3.1: Set up EC2 Instance
+
+1.  **Launch an EC2 Instance:**
+    * Log in to the [AWS Console](https://aws.amazon.com/console/) and navigate to EC2.
+    * Click **"Launch Instance"**.
+    * **Name:** Give your instance a descriptive name (e.g., "fraud-detection-api").
+    * **AMI:** Select **Ubuntu Server 22.04 LTS** (free tier eligible).
+    * **Instance Type:** Choose `t2.micro` (free tier) or `t2.medium` for better performance.
+    * **Key Pair:** 
+      - Click **"Create new key pair"** if you don't have one.
+      - Name it (e.g., "fraud-detection-key").
+      - Select **RSA** and **.pem** format.
+      - Click **"Create key pair"** - this will download the `.pem` file to your computer.
+      - **Important:** Save this file securely - you cannot download it again.
+
+2.  **Configure Security Group:**
+    * In the **Network settings** section, click **"Edit"**.
+    * Add the following inbound rules:
+      - **SSH (Port 22):** Source type "My IP" (automatically detects your IP).
+      - **Custom TCP (Port 8000):** Source type "Anywhere" (`0.0.0.0/0`).
+    * Click **"Launch Instance"**.
+
+3.  **Set Key Permissions:**
+    After downloading the `.pem` file, set secure permissions:
+    ```bash
+    # Navigate to where you downloaded the key (usually Downloads folder)
+    cd ~/Downloads
+    
+    # Set secure permissions (required for SSH)
+    chmod 400 your-key-name.pem
+    
+    # Optional: Move to a dedicated SSH keys folder
+    mkdir -p ~/.ssh/aws-keys
+    mv your-key-name.pem ~/.ssh/aws-keys/
+    ```
+
+### Step 3.2: Install Docker on EC2
+
+Connect to your instance via SSH and run the following commands.
+
 ```bash
-# In another terminal
-python test_client.py
+# SSH into your server
+ssh -i "your-key.pem" ubuntu@your-ec2-public-ip
+
+# Update packages and install Docker
+sudo apt-get update
+sudo apt-get install -y docker.io
+
+# Add the ubuntu user to the docker group to run docker without sudo
+sudo usermod -aG docker ${USER}
 ```
 
-**API Endpoints:**
-- `GET /ping` - Health check
-- `GET /model-info` - Model metadata
-- `POST /predict` - Image prediction (base64)
-- `POST /predict-file` - Image prediction (file upload)
+**Important:** You must **log out and log back in** for the user group change to take effect.
 
-### Step 3.3: Manual Testing
+### Step 3.3: Deploy the Application
+
+1.  **Copy Project to EC2:** From your **local machine**, use `scp` to copy your entire project folder.
+    ```bash
+    scp -r -i "your-key.pem" . ubuntu@your-ec2-public-ip:~/fraud-detection-project
+    ```
+2.  **Build and Run on EC2:** SSH back into your server and run the following Docker commands.
+    ```bash
+    # Navigate to the project folder
+    cd ~/fraud-detection-project
+
+    # Build the Docker image from the Dockerfile
+    docker build -t fraud-api .
+
+    # Run the container in detached (-d) mode, mapping port 8000 (-p)
+    docker run -d --name fraud-container -p 8000:8000 fraud-api
+    ```
+
+### Step 3.4: Verify the Deployment
+
+Your API is now live. From your local machine, test it using the server's public IP.
+
 ```bash
-# Test health endpoint
-curl http://localhost:8000/ping
-
-# Test model info
-curl http://localhost:8000/model-info
+curl -X POST "http://your-ec2-public-ip:8000/predict" \
+-H "Content-Type: application/json" \
+-d '{
+    "TransactionAmt": 150.0,
+    "dist1": 10.0,
+    "card1": 12345.0,
+    "card2": 543.0
+}'
 ```
 
-### 🎯 Key Takeaways
-- **Input Validation:** Always validate API inputs
-- **Preprocessing Consistency:** Match training preprocessing exactly
-- **Error Handling:** Graceful degradation for bad inputs
-- **Monitoring:** Log all predictions for later analysis
+-----
 
----
+## 📌 Part 4: Troubleshooting
 
-## 📌 Part 4: Deploy to EC2 (30 min)
-
-### Learning Objectives
-- Understand cloud deployment workflows
-- Configure security groups and networking
-- Debug deployment issues
-
-### Step 4.1: Package for Deployment
-```bash
-# Create deployment package
-mkdir deployment_package
-cp app.py deployment_package/
-cp requirements.txt deployment_package/
-cp -r saved_models deployment_package/
-```
-
-### Step 4.2: Deploy to EC2
-```bash
-# Copy files to EC2
-scp -i your-key.pem -r deployment_package ubuntu@your-ec2-ip:~/ml_deployment
-
-# SSH into EC2
-ssh -i your-key.pem ubuntu@your-ec2-ip
-
-# On EC2: Set up environment
-cd ml_deployment
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# Start the service
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-### Step 4.3: Configure Security & Test
-1. **Security Group:** Add inbound rule for port 8000
-2. **Test Deployment:**
-```bash
-# From your local machine
-curl http://your-ec2-ip:8000/ping
-
-# Update test_client.py with EC2 IP and run
-python test_client.py
-```
-
-### 🎯 Key Takeaways
-- **Environment Consistency:** Virtual environments prevent conflicts
-- **Security:** Never expose unnecessary ports
-- **Process Management:** Use process managers (systemd/supervisor) in production
-- **Monitoring:** Always monitor deployed services
-
----
-
-## 📌 Part 5: Simulate Model Drift (30 min)
-
-### Learning Objectives
-- Understand different types of model drift
-- Implement drift detection strategies
-- Plan model retraining workflows
-
-### Step 5.1: Run Drift Simulation
-```bash
-# Make sure your API is running (local or EC2)
-python simulate_drift.py
-```
-
-**Drift Scenarios:**
-1. **Baseline:** Original CIFAR-10 test data
-2. **Quality Drift:** Noisy CIFAR-10 images
-3. **Severe Quality Drift:** Very noisy images
-4. **Domain Drift:** CIFAR-100 images (different domain)
-
-### Step 5.2: Analyze Results
-The script generates:
-- `plots/drift_analysis.png` - Performance comparison charts
-- `drift_report.txt` - Automated drift analysis
-- `performance_log.json` - Detailed metrics
-
-### 🎯 Key Takeaways
-- **Data Quality Monitoring:** Track input data statistics
-- **Performance Monitoring:** Log accuracy, confidence, latency
-- **Threshold Setting:** Define acceptable performance ranges
-- **Retraining Triggers:** Automate model refresh workflows
-
----
-
-## 📌 Bonus: Real-World Gotchas (15 min)
-
-### Common Production Issues
-
-#### 1. Preprocessing Mismatches
-```python
-# Training: PIL Image → Tensor → Normalize
-# Inference: Base64 → PIL → Tensor → Normalize
-# Issue: Different image formats, color channels
-```
-
-#### 2. Model Versioning
-```bash
-# Good: Version your models
-saved_models/
-├── v1_2024_01_15/
-│   ├── model.pth
-│   └── metadata.joblib
-└── v2_2024_02_01/
-    ├── model.pth
-    └── metadata.joblib
-```
-
-#### 3. Performance Monitoring
-```python
-# Log everything for analysis
-{
-    "timestamp": "2024-01-15T10:30:00Z",
-    "model_version": "v1.0",
-    "prediction": "cat",
-    "confidence": 0.85,
-    "latency_ms": 45,
-    "input_hash": "abc123"
-}
-```
-
-#### 4. Rollback Strategy
-```python
-# Always have a rollback plan
-if current_model_accuracy < threshold:
-    switch_to_previous_model()
-    trigger_retraining_pipeline()
-```
-
----
-
-## 🛠️ Troubleshooting Guide
-
-### Common Issues
-
-**1. Port 8000 already in use**
-```bash
-# Find and kill process
-lsof -i :8000
-kill -9 <PID>
-```
-
-**2. CUDA out of memory**
-```python
-# In train_model.py, reduce batch size
-trainloader = DataLoader(trainset, batch_size=32)  # Reduce from 64
-```
-
-**3. EC2 connection refused**
-- Check security group (port 8000 open)
-- Verify API is running with `--host 0.0.0.0`
-- Check EC2 logs: `tail -f app.log`
-
-**4. Model loading errors**
-```python
-# Ensure model architecture matches exactly
-model = SimpleCNN(num_classes=10)  # Must match training
-```
-
----
-
-## 🎯 Module Outcomes
-
-
-✅ **Training Pipeline:** Reproducible model training and validation  
-✅ **API Development:** Production-ready ML inference services  
-✅ **Cloud Deployment:** End-to-end deployment workflows  
-✅ **Drift Detection:** Monitoring and maintaining model performance  
-✅ **Production Challenges:** Real-world deployment gotchas  
-
----
-
-## 📚 Next Steps & Advanced Topics
-
-1. **CI/CD for ML:** Automated testing and deployment
-2. **Model Monitoring:** Advanced drift detection techniques
-3. **A/B Testing:** Gradual model rollouts
-
-
----
-
-## 🤝 Resources
-
-- **GitHub Repo:** [Link to repo with all code](https://github.com/InfinitelyAsymptotic/ik/tree/mlDeploymentWorkshop)
-- **Contact:** pranjaljoshi [at] live [dot] com
-
----
-
-**Happy Deploying! 🚀**
+  * **Port 8000 Already in Use:** If you get an "address already in use" error, another service is using that port. Change the mapping in `docker-compose.yml` or the `docker run` command (e.g., `-p 8080:8000`) and access the API on the new port (`8080`).
+  * **Connection Refused on EC2:** Ensure your EC2 Security Group correctly allows inbound traffic on port 8000 from `0.0.0.0/0`.
+  * **Container Fails to Start:** Check the container logs for errors using the command `docker logs fraud-container`.
