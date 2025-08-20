@@ -88,7 +88,7 @@ Using Docker Compose, you can build the image and start the container with a sin
 
 ```bash
 # Build the image and start the container.
-docker-compose up --build
+docker compose up --build
 ```
 
 The API will now be running and accessible at `http://localhost:8000`.
