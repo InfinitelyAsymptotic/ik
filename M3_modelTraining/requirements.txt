@@ -3,4 +3,7 @@ scikit-learn
 mlflow
 pyarrow
 kaggle
-ray[tune,default]
+ray[air,train,tune,torch]
+xgboost
+xgboost_ray
+torch
