@@ -36,7 +36,7 @@ M6_Performance_Monitoring/
 ### 1. Clone and Setup Environment
 
 ```bash
-git clone <your_repository_url>
+git clone https://github.com/InfinitelyAsymptotic/ik.git
 cd M6_Performance_Monitoring
 
 # Create and activate Python virtual environment
