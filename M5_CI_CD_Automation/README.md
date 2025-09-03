@@ -30,7 +30,7 @@ M5_CI_CD_Automation/
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/InfinitelyAsymptotic/ik.git
 cd M5_CI_CD_Automation
 
 # Create and activate virtual environment
