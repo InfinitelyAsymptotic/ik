@@ -26,7 +26,7 @@ feature_names = []
 def load_model_and_preprocessor():
     global model, preprocessor, feature_names
 
-    # Load most recent model
+    # Load most recent model and preprocessor
     models = sorted(glob.glob(os.path.join(MODEL_PATH, "fraud_model_*.joblib")), reverse=True)
     if not models:
         raise RuntimeError("❌ No model found. Run training first.")
